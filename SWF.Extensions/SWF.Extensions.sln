@@ -1,12 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SWF.Extensions.Core", "SWF.Extensions.Core\SWF.Extensions.Core.fsproj", "{1BFEC7F3-EF41-468F-BDD8-3F0EDB99B20A}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCs", "ExampleCs\ExampleCs.csproj", "{8484C87E-8B0F-4E79-BED8-320EF78FC871}"
-EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ExampleFs", "ExampleFs\ExampleFs.fsproj", "{5E048555-B628-4883-8CE9-0F32B6C24B7C}"
-EndProject
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{4EF40F66-ADE3-4576-9D5B-8CF5DBC48ED4}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\NuGet.Config = .nuget\NuGet.Config
@@ -14,14 +10,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{4EF40F
 		.nuget\NuGet.targets = .nuget\NuGet.targets
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWF.Extensions.CoreCs", "SWF.Extensions.CoreCs\SWF.Extensions.CoreCs.csproj", "{9B2E5BFD-6936-4351-8185-74A3EE03C9A9}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".solution", ".solution", "{F14AECA2-E6FF-433F-B318-2DBEF11D57B1}"
 	ProjectSection(SolutionItems) = preProject
 		..\nuget\Amazon.SimpleWorkflow.Extensions.nuspec = ..\nuget\Amazon.SimpleWorkflow.Extensions.nuspec
 		..\build.fsx = ..\build.fsx
 		..\RELEASE_NOTES.md = ..\RELEASE_NOTES.md
 	EndProjectSection
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "SWF.Extensions.Core", "SWF.Extensions.Core\SWF.Extensions.Core.fsproj", "{1BFEC7F3-EF41-468F-BDD8-3F0EDB99B20A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ExampleCs", "ExampleCs\ExampleCs.csproj", "{8484C87E-8B0F-4E79-BED8-320EF78FC871}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "ExampleFs", "ExampleFs\ExampleFs.fsproj", "{5E048555-B628-4883-8CE9-0F32B6C24B7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SWF.Extensions.CoreCs", "SWF.Extensions.CoreCs\SWF.Extensions.CoreCs.csproj", "{9B2E5BFD-6936-4351-8185-74A3EE03C9A9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
