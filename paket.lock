@@ -1,0 +1,10 @@
+NUGET
+  remote: https://www.nuget.org/api/v2
+    AWSSDK.Core (3.3.6.1) - framework: >= net461
+    AWSSDK.SimpleWorkflow (3.3.0.5) - framework: >= net461
+      AWSSDK.Core (>= 3.3.6 < 3.4)
+    FAKE (4.47)
+    FSharp.Core (4.0.0.1) - framework: >= net461
+    log4net (2.0.5) - framework: >= net461
+    NuGet.CommandLine (3.4.3)
+    ServiceStack.Text (4.5.4) - framework: >= net461

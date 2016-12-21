@@ -22,7 +22,7 @@ module Utils =
         | None, _ -> ()
         | Some x, PropertyGet(Some(Value(inst, _)), prop, _) when prop.CanWrite ->
             prop.GetSetMethod().Invoke(inst, [| x |]) |> ignore
-        | _ -> failwith "Expression is not a settable property : %A" expr
+        | _ -> failwithf "Expression is not a settable property : %A" expr
 
     // reverse operator of the above
     let inline (<-?) (expr : Expr<'a>) (x : 'a option) = x ?-> expr

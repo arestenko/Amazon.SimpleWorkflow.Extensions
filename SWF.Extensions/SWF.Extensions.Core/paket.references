@@ -1,0 +1,4 @@
+AWSSDK.SimpleWorkflow
+FSharp.Core
+log4net
+ServiceStack.Text

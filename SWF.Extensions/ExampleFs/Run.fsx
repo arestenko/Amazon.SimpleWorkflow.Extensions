@@ -1,5 +1,6 @@
-﻿#r "bin/Debug/AWSSDK.dll"
-#r "bin/Debug/SWF.Extensions.Core.dll"
+﻿#r "../../../build/AWSSDK.Core.dll"
+#r "../../../build/AWSSDK.SimpleWorkflow.dll"
+#r "../../../build/SWF.Extensions.Core.dll"
 
 #load "BasicExamples.fs"
 

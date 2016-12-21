@@ -754,7 +754,7 @@ type HistoryEvent =
         }
 
 type DecisionTask (task   : Amazon.SimpleWorkflow.Model.DecisionTask, 
-                   client : Amazon.SimpleWorkflow.AmazonSimpleWorkflowClient,
+                   client : IAmazonSimpleWorkflow,
                    domain,
                    tasklist) =
     let nextPageToken = ref task.NextPageToken

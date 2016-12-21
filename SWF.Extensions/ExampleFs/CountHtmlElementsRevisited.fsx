@@ -1,5 +1,5 @@
-﻿#r "bin/Release/AWSSDK.dll"
-#r "bin/Release/SWF.Extensions.Core.dll"
+﻿#r "../../../build/AWSSDK.Core.dll"
+#r "../../../build/SWF.Extensions.Core.dll"
 
 open Amazon.SimpleWorkflow
 open Amazon.SimpleWorkflow.Extensions

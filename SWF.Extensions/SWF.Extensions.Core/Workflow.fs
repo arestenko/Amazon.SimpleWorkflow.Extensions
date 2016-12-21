@@ -42,7 +42,7 @@ type IWorkflow =
     abstract member ExecutionStartToCloseTimeout : Seconds option
     abstract member ChildPolicy                  : ChildPolicy option
 
-    abstract member Start       : Amazon.SimpleWorkflow.AmazonSimpleWorkflowClient -> unit
+    abstract member Start       : IAmazonSimpleWorkflow -> unit
 
 // #endregion
 
@@ -293,10 +293,10 @@ type Workflow (domain, name, description, version, ?taskList,
             | _ -> [])
     
     // tries to get the nth (zero-index) stage
-    let getStage n = if n >= stages.Length then None else List.nth stages n |> Some
+    let getStage n = if n >= stages.Length then None else List.item n stages |> Some
 
     // registers the workflow and activity types
-    let register (clt : Amazon.SimpleWorkflow.AmazonSimpleWorkflowClient) = 
+    let register (clt : IAmazonSimpleWorkflow) = 
         let registerActivities stages = async {
             let req  = ListActivityTypesRequest(Domain = domain, RegistrationStatus = swfRegStatus Registered)
             let! res = clt.ListActivityTypesAsync(req) |> Async.AwaitTask
@@ -392,7 +392,7 @@ type Workflow (domain, name, description, version, ?taskList,
         | None -> onWorkflowCompleted.Trigger(domain, name)
                   [| CompleteWorkflowExecution input |], ""
 
-    let decide (swfClient : AmazonSimpleWorkflowClient, task : DecisionTask) =
+    let decide (swfClient : IAmazonSimpleWorkflow, task : DecisionTask) =
         let getLastExecContext () =
             let req = DescribeWorkflowExecutionRequest(Domain = domain, Execution = task.WorkflowExecution)
             let res = swfClient.DescribeWorkflowExecution(req)

@@ -169,3 +169,6 @@ temp/
 
 # Test results produced by build
 TestResults.xml
+
+# Paket executable
+.paket/paket.exe
