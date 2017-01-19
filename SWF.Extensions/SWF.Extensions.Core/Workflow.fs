@@ -10,6 +10,8 @@ open ServiceStack.Text
 open Amazon.SimpleWorkflow.Extensions
 open Amazon.SimpleWorkflow.Extensions.Model
 
+#nowarn "25"
+
 // #region Interface Definitions
 
 // Marker interface for anything that can be scheduled at a stage of a workflow
@@ -17,6 +19,7 @@ type ISchedulable =
     abstract member Name        : string
     abstract member Description : string
     abstract member MaxAttempts : int
+    abstract member Input       : Input option
 
 // Represents an activity
 type IActivity =
@@ -42,7 +45,7 @@ type IWorkflow =
     abstract member ExecutionStartToCloseTimeout : Seconds option
     abstract member ChildPolicy                  : ChildPolicy option
 
-    abstract member Start       : IAmazonSimpleWorkflow -> unit
+    abstract member Start       : IAmazonSimpleWorkflow -> string -> unit
 
 // #endregion
 
@@ -130,19 +133,21 @@ module WorkflowUtils =
     /// Given an array of ISchedulable, returns the workflows
     let getWorkflows (arr : ISchedulable[])  = arr |> Array.choose (function | :? IWorkflow as workflow -> Some workflow | _ -> None)
 
+    let private random = new Random()
+
     /// Formats the activity ID for an activity given its current state
     let getActionId actionName { StageNumber = stageNum; AttemptNumber = attempts; ActionNumber = actionNum } = 
-        sprintf "%s.stag_%d.act_%d.attempt_%d" actionName stageNum actionNum attempts
+        sprintf "%s.stag_%d.act_%d.attempt_%d.time_%s.%d" actionName stageNum actionNum attempts (DateTime.Now.ToString("yyyy.MM.ddTHH:mm:ss:fff")) (random.Next())
 
     /// Formats the activity ID for an activity given its current state
     let getChildWorkflowId actionName state = 
         sprintf "%s.%O" (getActionId actionName state) (Guid.NewGuid())
 
     /// Formats the activity version for an activity at a particular stage of a workflow
-    let getActivityVersion workflowName workflowVersion stageNum (activity : IActivity) = 
-        match activity.Version with
-        | Some v -> sprintf "%s.v%s.%d.v%s" workflowName workflowVersion stageNum v
-        | _      -> sprintf "%s.v%s.%d" workflowName workflowVersion stageNum
+//    let getActivityVersion workflowName workflowVersion stageNum (activity : IActivity) = 
+//        match activity.Version with
+//        | Some v -> sprintf "%s.v%s.%d.v%s" workflowName workflowVersion stageNum v
+//        | _      -> sprintf "%s.v%s.%d" workflowName workflowVersion stageNum
     
     /// Returns the event type associated with the specified event ID
     let findEventTypeById eventId (evts : HistoryEvent seq) =
@@ -170,7 +175,7 @@ module WorkflowUtils =
 
     /// Returns the decision to schedule an activity
     let scheduleActivity actionNum totalActions workflowName workflowVersion stageNum (activity : IActivity) input attempts = 
-        let activityType = ActivityType(Name = activity.Name, Version = getActivityVersion workflowName workflowVersion stageNum activity)
+        let activityType = ActivityType(Name = activity.Name, Version = defaultArg activity.Version "1.0") //getActivityVersion workflowName workflowVersion stageNum activity)
         let state        = { 
                                 StageNumber   = stageNum
                                 AttemptNumber = attempts + 1
@@ -183,10 +188,10 @@ module WorkflowUtils =
                                                 activityType,
                                                 Some activity.TaskList, 
                                                 input,
-                                                Some activity.TaskHeartbeatTimeout, 
-                                                Some activity.TaskScheduleToStartTimeout, 
-                                                Some activity.TaskStartToCloseTimeout, 
-                                                Some activity.TaskScheduleToCloseTimeout,
+                                                secondsOp activity.TaskHeartbeatTimeout, 
+                                                secondsOp activity.TaskScheduleToStartTimeout, 
+                                                secondsOp activity.TaskStartToCloseTimeout, 
+                                                secondsOp activity.TaskScheduleToCloseTimeout,
                                                 Some control)
         decision
 
@@ -224,22 +229,27 @@ module WorkflowUtils =
 /// Represents an activity, which in essence, is a function that takes some input and 
 /// returns some output
 type Activity<'TInput, 'TOutput>(name, description, 
-                                 processor                   : 'TInput -> 'TOutput,
                                  taskHeartbeatTimeout        : Seconds,
                                  taskScheduleToStartTimeout  : Seconds,
                                  taskStartToCloseTimeout     : Seconds,
                                  taskScheduleToCloseTimeout  : Seconds,
                                  ?version,
                                  ?taskList,
-                                 ?maxAttempts) =
+                                 ?maxAttempts,
+                                 ?input,
+                                 ?processor                  : 'TInput -> 'TOutput) =
     let taskList    = defaultArg taskList (name + "TaskList")
     let maxAttempts = defaultArg maxAttempts 1    // by default, only attempt once, i.e. no retry
 
     let inputSerializer  = JsonSerializer<'TInput>()
     let outputSerializer = JsonSerializer<'TOutput>()
 
+    let mutable processor = defaultArg processor (fun input -> Unchecked.defaultof<'TOutput>)
+
     // use Json serializer to marshall the input and output from-and-to string
-    let processor = inputSerializer.DeserializeFromString >> processor >> outputSerializer.SerializeToString
+    member this.Processor 
+        with get() = processor
+        and set v = processor <- v
     
     interface IActivity with
         member this.Name                        = name
@@ -251,23 +261,28 @@ type Activity<'TInput, 'TOutput>(name, description,
         member this.TaskStartToCloseTimeout     = taskStartToCloseTimeout
         member this.TaskScheduleToCloseTimeout  = taskScheduleToCloseTimeout
         member this.MaxAttempts                 = maxAttempts
+        member this.Input                       = input
 
-        member this.Process (input)             = processor input
+        member this.Process input =
+            inputSerializer.DeserializeFromString >> this.Processor >> outputSerializer.SerializeToString <| input 
 
 type Activity = Activity<string, string>
 
 // #endregion
 
-type Workflow (domain, name, description, version, ?taskList, 
+type Workflow (domain, name, description, version, 
+               ?taskList, 
                ?stages                  : Stage list,
                ?taskStartToCloseTimeout : Seconds,
                ?execStartToCloseTimeout : Seconds,
                ?childPolicy             : ChildPolicy,
                ?identity                : Identity,
-               ?maxAttempts) =
+               ?maxAttempts,
+               ?input) =
     do if nullOrWs domain then nullArg "domain"
     do if nullOrWs name   then nullArg "name"
 
+    //let input = defaultArg input Unchecked.defaultof<Input>
     let taskList = new TaskList(Name = defaultArg taskList (name + "TaskList"))
     let maxAttempts = defaultArg maxAttempts 1    // by default, only attempt once, i.e. no retry
 
@@ -308,10 +323,13 @@ type Workflow (domain, name, description, version, ?taskList,
             let activities = stages 
                              |> List.collect (function 
                                 | { StageNumber = stageNum; Action = ScheduleActivity(activity) }
-                                    -> [ (stageNum, activity, getActivityVersion name version stageNum activity) ]
+                                    -> [ (stageNum, activity, version)] //getActivityVersion stageNum activity) ]
                                 | { StageNumber = stageNum; Action = ParallelActions(arr, _) }
-                                    -> let getActivityVersion = getActivityVersion name version stageNum
-                                       arr |> getActivities |> Array.map (fun activity -> stageNum, activity, getActivityVersion activity) |> Array.toList
+                                    -> //let getActivityVersion = getActivityVersion stageNum
+                                       arr 
+                                       |> getActivities 
+                                       |> Array.map (fun activity -> stageNum, activity, version (*getActivityVersion activity*) ) 
+                                       |> Array.toList
                                 | _ -> [])
                              |> List.filter (fun (_, activity, version) -> not <| existing.Contains(activity.Name, version))
                              |> Seq.distinctBy (fun (_, activity, version) -> activity.Name, version)
@@ -323,10 +341,10 @@ type Workflow (domain, name, description, version, ?taskList,
                             Description     = activity.Description,
                             DefaultTaskList = activity.TaskList,
                             Version         = version,
-                            DefaultTaskHeartbeatTimeout         = str activity.TaskHeartbeatTimeout,
-                            DefaultTaskScheduleToStartTimeout   = str activity.TaskScheduleToStartTimeout,
-                            DefaultTaskStartToCloseTimeout      = str activity.TaskStartToCloseTimeout,
-                            DefaultTaskScheduleToCloseTimeout   = str activity.TaskScheduleToCloseTimeout)
+                            DefaultTaskHeartbeatTimeout         = secondsStr activity.TaskHeartbeatTimeout,
+                            DefaultTaskScheduleToStartTimeout   = secondsStr activity.TaskScheduleToStartTimeout,
+                            DefaultTaskStartToCloseTimeout      = secondsStr activity.TaskStartToCloseTimeout,
+                            DefaultTaskScheduleToCloseTimeout   = secondsStr activity.TaskScheduleToCloseTimeout)
 
                 do! clt.RegisterActivityTypeAsync(req) |> Async.AwaitTask |> Async.Ignore
         }
@@ -343,8 +361,9 @@ type Workflow (domain, name, description, version, ?taskList,
                             Description     = description,
                             Version         = version,
                             DefaultTaskList = taskList)
-                <@ req.DefaultTaskStartToCloseTimeout @>      <-? (taskStartToCloseTimeout ?>> str)
-                <@ req.DefaultExecutionStartToCloseTimeout @> <-? (execStartToCloseTimeout ?>> str)
+                let taskStartClose = secondsStrOp taskStartToCloseTimeout                
+                <@ req.DefaultTaskStartToCloseTimeout @>      <-? secondsStrOp taskStartToCloseTimeout
+                <@ req.DefaultExecutionStartToCloseTimeout @> <-? secondsStrOp execStartToCloseTimeout
                 <@ req.DefaultChildPolicy @>                  <-? (childPolicy ?>> swfChildPolicy)
 
                 do! clt.RegisterWorkflowTypeAsync(req) |> Async.AwaitTask |> Async.Ignore
@@ -371,10 +390,14 @@ type Workflow (domain, name, description, version, ?taskList,
         |> Async.RunSynchronously
     
     // schedules the nth (zero-indexed) stage given an input and current number of attempts
-    let scheduleStage stageNum input attempts =
+    let scheduleStage stageNum input attempts =        
         match getStage stageNum with
         | Some({ Action = ScheduleActivity(activity) }) 
-               -> [| scheduleActivityStage name version stageNum activity input attempts |],
+               -> let input' = 
+                    match activity.Input with
+                    | None -> input
+                    | Some _ -> activity.Input                
+                  [| scheduleActivityStage name version stageNum activity input' attempts |],
                   serializeWorkflowState { CurrentStageNumber = stageNum; NumberOfActions = 1; Results = new Dictionary<int, string>() }
         | Some({ Action = StartChildWorkflow(workflow) }) 
                -> [| scheduleChildWorkflowStage stageNum workflow input attempts |], 
@@ -385,7 +408,12 @@ type Workflow (domain, name, description, version, ?taskList,
                   // collect all the decisions required to schedule the stage
                   let decisions = actions |> Array.mapi (fun i x -> 
                       match x with
-                      | :? IActivity as activity -> scheduleActivity i totalActions name version stageNum activity input attempts
+                      | :? IActivity as activity -> 
+                        let input' = 
+                            match activity.Input with
+                            | None -> input
+                            | Some _ -> activity.Input
+                        scheduleActivity i totalActions name version stageNum activity input' attempts
                       | :? IWorkflow as workflow -> scheduleChildWorkflow i totalActions stageNum workflow input attempts)
 
                   decisions, serializeWorkflowState { CurrentStageNumber = stageNum; NumberOfActions = totalActions; Results = new Dictionary<int, string>() }
@@ -486,6 +514,31 @@ type Workflow (domain, name, description, version, ?taskList,
             // we're still waiting for a child workflow to finish, do nothing for now
             [||], getLastExecContext()
 
+    let startWorkflow (clt : IAmazonSimpleWorkflow) id =
+        
+//        let listWorkflowRequest = 
+//            new ListOpenWorkflowExecutionsRequest(
+//                Domain = domain,
+//                TypeFilter = new WorkflowTypeFilter (Name = name, Version = version),
+//                StartTimeFilter =
+//                    new ExecutionTimeFilter (OldestDate = DateTime.Now.AddDays -14., LatestDate = DateTime.Now)
+//                )
+//
+//        if (clt.ListOpenWorkflowExecutions(listWorkflowRequest).WorkflowExecutionInfos.ExecutionInfos
+//            |> Seq.exists (fun x -> not x.CancelRequested) ) then
+        new StartWorkflowExecutionRequest (
+            Input = defaultArg input String.Empty,
+            WorkflowId = id,
+            Domain = domain,
+            WorkflowType = new WorkflowType(
+                Name = name,
+                Version = version
+            ),
+            TaskList = taskList
+        )
+        |> clt.StartWorkflowExecution
+        |> ignore
+        
     let startDecisionWorker clt  = DecisionWorker.Start(clt, domain, taskList.Name, decide, onDecisionTaskError.Trigger, ?identity = identity)
     let startActivityWorkers clt = 
         activities
@@ -493,18 +546,25 @@ type Workflow (domain, name, description, version, ?taskList,
             // leave some buffer for heart beat frequency, record a heartbeat every 75% of the timeout
             let heartbeat = TimeSpan.FromSeconds(float activity.TaskHeartbeatTimeout * 0.75)
             ActivityWorker.Start(clt, domain, activity.TaskList.Name, activity.Process, onActivityTaskError.Trigger, heartbeat, ?identity = identity))
-    let startChildWorkflows clt = childWorkflows |> List.iter (fun workflow -> workflow.Start clt)
+    let startChildWorkflows clt id = childWorkflows |> List.iter (fun workflow -> workflow.Start clt id)
 
-    let start clt = 
+    let start clt id = 
         register clt |> ignore
-        startDecisionWorker  clt
+        startWorkflow clt id
+        startDecisionWorker clt
+    let startWorkers clt id = 
+        //register clt |> ignore
         startActivityWorkers clt
-        startChildWorkflows  clt
+        startChildWorkflows  clt id
+
+//    let start clt = 
+//        startDecider clt
+//        startWorkers clt
 
     static let validateChildWorkflow (child : IWorkflow) =
-        if child.ExecutionStartToCloseTimeout.IsNone then failwithf "child workflows must specify execution timeout"
-        if child.TaskStartToCloseTimeout.IsNone then failwithf "child workflows must specify decision task timeout"
-        if child.ChildPolicy.IsNone then failwithf "child workflows must specify child policy"    
+        if child.ExecutionStartToCloseTimeout.IsNone then failwith "Child workflows must specify execution timeout"
+        if child.TaskStartToCloseTimeout.IsNone then failwith "Child workflows must specify decision task timeout"
+        if child.ChildPolicy.IsNone then failwith "Child workflows must specify child policy"    
 
     member private this.Append (toStageAction : 'a -> StageAction, args : 'a) = 
         let id = stages.Length
@@ -515,7 +575,8 @@ type Workflow (domain, name, description, version, ?taskList,
                  ?execStartToCloseTimeout = execStartToCloseTimeout,
                  ?childPolicy             = childPolicy,
                  ?identity                = identity,
-                 maxAttempts              = maxAttempts)
+                 maxAttempts              = maxAttempts, 
+                 input                    = defaultArg input String.Empty)
 
     // #region Public Events
 
@@ -536,10 +597,12 @@ type Workflow (domain, name, description, version, ?taskList,
         member this.TaskStartToCloseTimeout      = taskStartToCloseTimeout
         member this.ExecutionStartToCloseTimeout = execStartToCloseTimeout
         member this.ChildPolicy                  = childPolicy
-        member this.Start swfClt                 = start swfClt
+        member this.Input                        = input
+        member this.Start swfClt id              = start swfClt id
+        //member this.StartDecider swfClt          = startDecider swfClt
+        //member this.StartWorkers swfClt          = startWorkers swfClt
                 
     member this.NumberOfStages                   = stages.Length
-    member this.Start swfClt                     = start swfClt
 
     // #region Operators
 

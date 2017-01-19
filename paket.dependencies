@@ -1,9 +1,10 @@
+framework: net461
 source https://nuget.org/api/v2
 
 // NuGet packages
-nuget FSharp.Core 4.0.0.1 framework: >= net461
+nuget FSharp.Core
 nuget FAKE
-nuget AWSSDK.SimpleWorkflow 3.3.0.5 framework: >= net461
-nuget log4net 2.0.5 framework: >= net461
+nuget AWSSDK.SimpleWorkflow
+nuget log4net
 nuget NuGet.CommandLine
-nuget ServiceStack.Text 4.5.4 framework: >= net461
+nuget ServiceStack.Text

@@ -39,6 +39,8 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
 
         public int? MaxAttempts { get; private set; }
 
+        public string Input { get; private set; }
+
         #endregion
 
         public IWorkflowBuilder WithDescription(string description)
@@ -80,6 +82,12 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
         public IWorkflowBuilder WithMaxAttempts(int maxAttempts)
         {
             MaxAttempts = maxAttempts;
+            return this;
+        }
+
+        public IWorkflowBuilder WithInput(string input)
+        {
+            Input = input;
             return this;
         }
 
@@ -130,7 +138,8 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
                     ExecutionStartToCloseTimeout.AsOption(),
                     GetChildPolicy(ChildPolicy).AsOption(),
                     Identity.AsOption(string.IsNullOrWhiteSpace),
-                    MaxAttempts.AsOption());
+                    MaxAttempts.AsOption(),
+                    Input.AsOption(string.IsNullOrWhiteSpace));
         }
 
         /// <summary>

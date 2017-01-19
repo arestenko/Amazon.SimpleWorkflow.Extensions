@@ -89,7 +89,19 @@ type TimeoutType =
 // #region Convertor functions
 
 let inline eventIdOp x      = (int64 >> function | 0L -> None | x' -> Some x') x
-let inline secondsOp x      = (int >> function | 0 -> None | x' -> Some x') x
+let inline secondsOp x      = //(int >> function | 0 -> None | x' -> Some x') x    
+    let parsed, sec  = 
+        match box x with
+        | :? string  as str -> Int32.TryParse str
+        | :? Seconds as sec -> true, sec
+        | _ -> failwithf "Unexpected type %A" x
+    match parsed, sec with
+    | true, 0
+    | false, _  -> None
+    | true, sec -> Some sec
+
+let inline secondsStrOp x   = match x with None | Some 0 -> Some "NONE" | Some x' -> str x' |> Some
+let inline secondsStr x     = match x with 0 -> "NONE" | x' -> str x'
 let inline seconds x        = int x
 let inline timeout x        = TimeoutType.op_Explicit x
 let inline childPolicy x    = ChildPolicy.op_Explicit x
@@ -196,8 +208,8 @@ type Decision =
                <@ attrs.ChildPolicy @>                  <-? (childPolicy ?>> swfChildPolicy)
                <@ attrs.TaskList @>                     <-? taskList
                <@ attrs.Input @>                        <-? input
-               <@ attrs.ExecutionStartToCloseTimeout @> <-? (execTimeout ?>> str)
-               <@ attrs.TaskStartToCloseTimeout @>      <-? (taskTimeout ?>> str)
+               <@ attrs.ExecutionStartToCloseTimeout @> <-? secondsStrOp execTimeout
+               <@ attrs.TaskStartToCloseTimeout @>      <-? secondsStrOp taskTimeout
                <@ attrs.WorkflowTypeVersion @>          <-? version
                attrs.TagList.AddRange                   <| defaultArg tagList [||]
 
@@ -224,10 +236,11 @@ type Decision =
                                                                   ActivityType = activityType)               
                <@ attrs.TaskList @>                 <-? taskList
                <@ attrs.Input @>                    <-? input
-               <@ attrs.HeartbeatTimeout @>         <-? (heartbeatTimeout ?>> str)
-               <@ attrs.ScheduleToStartTimeout @>   <-? (schedToStartTimeout ?>> str)
-               <@ attrs.StartToCloseTimeout @>      <-? (timeout ?>> str)
-               <@ attrs.ScheduleToCloseTimeout @>   <-? (schedToCloseTimeout  ?>> str)
+               <@ attrs.HeartbeatTimeout @>         <-? secondsStrOp heartbeatTimeout
+               <@ attrs.ScheduleToStartTimeout @>   <-? secondsStrOp schedToStartTimeout
+               <@ attrs.ScheduleToCloseTimeout @>   <-? Some "NONE"
+               <@ attrs.StartToCloseTimeout @>      <-? secondsStrOp timeout
+               <@ attrs.ScheduleToCloseTimeout @>   <-? secondsStrOp schedToCloseTimeout
                <@ attrs.Control @>                  <-? control
 
                decision.ScheduleActivityTaskDecisionAttributes <- attrs
@@ -245,15 +258,15 @@ type Decision =
                <@ attrs.ChildPolicy @>                  <-? (childPolicy ?>> swfChildPolicy)
                <@ attrs.TaskList @>                     <-? taskList
                <@ attrs.Input @>                        <-? input               
-               <@ attrs.ExecutionStartToCloseTimeout @> <-? (execTimeout ?>> str)
-               <@ attrs.TaskStartToCloseTimeout @>      <-? (taskTimeout ?>> str)
+               <@ attrs.ExecutionStartToCloseTimeout @> <-? secondsStrOp execTimeout
+               <@ attrs.TaskStartToCloseTimeout @>      <-? secondsStrOp taskTimeout
                <@ attrs.Control @>                      <-? control
                attrs.TagList.AddRange                   <| defaultArg tagList [||]
 
                decision.StartChildWorkflowExecutionDecisionAttributes <- attrs
         | StartTimer(timerId, startToFireTimeout, control)
             -> let attrs = StartTimerDecisionAttributes(TimerId            = timerId,
-                                                        StartToFireTimeout = str startToFireTimeout)
+                                                        StartToFireTimeout = secondsStr startToFireTimeout)
                <@ attrs.Control @> <-? control
 
                decision.StartTimerDecisionAttributes <- attrs

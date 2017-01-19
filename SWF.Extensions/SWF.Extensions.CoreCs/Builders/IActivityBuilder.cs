@@ -27,6 +27,8 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
 
         int? MaxAttempts { get; }
 
+        string Input { get; }
+
         /// <summary>
         /// Optionally sets the description for the activity
         /// </summary>
@@ -38,9 +40,19 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
         IActivityBuilder<TInput, TOutput> WithTaskList(string taskList);
 
         /// <summary>
+        /// Optionally sets the task processor
+        /// </summary>
+        IActivityBuilder<TInput, TOutput> WithProcessor(Func<TInput, TOutput> processor);
+
+        /// <summary>
         /// Optionally sets the max number of attempts that can be made to execute the activity
         /// </summary>
         IActivityBuilder<TInput, TOutput> WithMaxAttempts(int maxAttempts);
+
+        /// <summary>
+        /// Optionally sets the activity input parameter
+        /// </summary>
+        IActivityBuilder<TInput, TOutput> WithInput(string input);
 
         /// <summary>
         /// Finish editing the activity

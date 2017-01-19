@@ -40,7 +40,7 @@ type DecisionWorker private (
         let req = PollForDecisionTaskRequest(Domain       = domain, 
                                              ReverseOrder = true,
                                              TaskList     = new TaskList(Name = tasklist))
-        <@ req.Identity @> <-? identity
+        //<@ req.Identity @> <-? identity
 
         let work = clt.PollForDecisionTaskAsync(req) |> Async.AwaitTask
         let! res = Async.WithRetry(work, 3)
@@ -232,6 +232,13 @@ type ActivityWorker private (
                 (fun _      -> logger.Error("Async workflow has exited unexpectedly.")),
                 (fun exn    -> logger.Error("Async workflow has exited with exception.", exn)),
                 (fun canExn -> logger.Error("Async workflow has been cancelled.", canExn))))
+
+//    new(clt             : IAmazonSimpleWorkflow,
+//        domain          : string,
+//        tasklist        : string,
+//        work            : string -> string ) =
+//        
+//        ActivityWorker(clt, domain, tasklist, work, (fun _ -> ()))
 
     /// Starts an activity worker with C# lambdas with minimal set of inputs
     static member Start(clt             : IAmazonSimpleWorkflow,

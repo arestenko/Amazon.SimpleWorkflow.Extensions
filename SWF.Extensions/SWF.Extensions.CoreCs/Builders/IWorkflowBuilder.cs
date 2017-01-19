@@ -64,6 +64,11 @@ namespace Amazon.SimpleWorkflow.Extensions.Builders
         IWorkflowBuilder WithMaxAttempts(int maxAttempts);
 
         /// <summary>
+        /// Optionally sets the workflow input parameter
+        /// </summary>
+        IWorkflowBuilder WithInput(string input);
+
+        /// <summary>
         /// Attaches an activity or child workflow as the next stage of a workflow
         /// </summary>
         IWorkflowBuilder Attach(ISchedulable schedulable);

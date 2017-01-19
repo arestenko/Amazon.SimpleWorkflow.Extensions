@@ -27,5 +27,20 @@ namespace Amazon.SimpleWorkflow.Extensions
                         taskStartToCloseTimeout,
                         taskScheduleToCloseTimeout);
         }
+
+        public static IActivityBuilder<TInput, TOutput> CreateActivity<TInput, TOutput>(
+            string name,
+            int taskHeartbeatTimeout,
+            int taskScheduleToStartTimeout,
+            int taskStartToCloseTimeout,
+            int taskScheduleToCloseTimeout)
+        {
+            return new ActivityBuilderImpl<TInput, TOutput>(
+                        name, 
+                        taskHeartbeatTimeout, 
+                        taskScheduleToStartTimeout,
+                        taskStartToCloseTimeout,
+                        taskScheduleToCloseTimeout);
+        }
     }
 }
