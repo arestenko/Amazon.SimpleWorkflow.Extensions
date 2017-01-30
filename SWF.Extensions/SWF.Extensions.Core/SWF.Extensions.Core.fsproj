@@ -20,23 +20,23 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\build\</OutputPath>
-    <IntermediateOutputPath>..\build\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
     </DocumentationFile>
-    <PlatformTarget>x64</PlatformTarget>
+    <PlatformTarget>AnyCPU</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\build\</OutputPath>
-    <IntermediateOutputPath>..\build\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\bin\SWF.Extensions.Core.XML</DocumentationFile>
+    <DocumentationFile>..\..\build\SWF.Extensions.Core.XML</DocumentationFile>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
@@ -44,8 +44,8 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\..\..\build\</OutputPath>
-    <IntermediateOutputPath>..\..\..\obj\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>
@@ -56,11 +56,11 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\..\build\</OutputPath>
-    <IntermediateOutputPath>..\..\..\obj\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\bin\SWF.Extensions.Core.XML</DocumentationFile>
+    <DocumentationFile>..\..\build\SWF.Extensions.Core.XML</DocumentationFile>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup>
@@ -71,8 +71,8 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Tailcalls>false</Tailcalls>
-    <OutputPath>..\..\..\build\</OutputPath>
-    <IntermediateOutputPath>..\..\..\obj\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile />
@@ -82,11 +82,11 @@
     <DebugType>pdbonly</DebugType>
     <Optimize>true</Optimize>
     <Tailcalls>true</Tailcalls>
-    <OutputPath>..\..\..\build\</OutputPath>
-    <IntermediateOutputPath>..\..\..\obj\</IntermediateOutputPath>
+    <OutputPath>..\..\build\</OutputPath>
+    <IntermediateOutputPath>..\..\obj\</IntermediateOutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>..\bin\SWF.Extensions.Core.XML</DocumentationFile>
+    <DocumentationFile>..\..\build\SWF.Extensions.Core.XML</DocumentationFile>
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <Choose>
